@@ -1,3 +1,4 @@
+const cors = require('cors');
 const express = require('express');
 const bodyParser = require('body-parser');
 const OpenAI = require('openai');
@@ -8,6 +9,10 @@ const upload = multer({ storage: storage });
 require('dotenv').config();
 
 const app = express();
+
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://whatshouldieat.xyz/']
+}));
 app.use(bodyParser.json());
 
 // Initialize OpenAI API
@@ -134,10 +139,16 @@ app.post('/api/extract-order-details', upload.array('images', 10), async (req, r
                  - "orderDate": A string representing the date of the order (e.g., "2025-06-27"). Don't hallucinate dates. return null if the date is not found. 
                  - "items": An array of strings, where each string is an item in the order. Don't hallucinate items. return null if the items are not found. 
                  Example Output:   
-                 "orders": [ 
-                              {"orderDate": "2025-06-27", "items": ["Rice and Beans", "Fish"]},      
-                              {"orderDate": "2025-06-25", "items": ["Fried and Jollof rice", "Chicken"]}
-                           ] 
+                "recentOrders": [
+                        {
+                          "orderDate": "2025-07-14",
+                          "items": ["Jollof Rice", "Fried Plantain", "Chicken"]
+                        },
+                        {
+                          "orderDate": "2025-07-13",
+                          "items": ["Eba", "Egusi Soup"]
+                        }
+                      ]
                  Analyze all the attached images and provide the extracted data in this exact JSON format.`;
 
     const content = [{ type: 'text', text: prompt }];
@@ -165,6 +176,7 @@ app.post('/api/extract-order-details', upload.array('images', 10), async (req, r
 
     const structuredResponse = JSON.parse(response.choices[0].message.content);
     res.json(structuredResponse);
+    console.log(structuredResponse);
 
   } catch (error) {
     console.error('Error processing image:', error);

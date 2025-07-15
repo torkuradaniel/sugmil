@@ -9,9 +9,17 @@ const buildV1Prompt = (userData) => {
     currentTime,
   } = userData;
 
-  const recentOrdersString = (recentOrders || [])
-    .map((order) => `On ${order.orderDate}, I ordered: ${order.items.join(', ')}`)
-    .join('; ');
+  const actualOrders = (Array.isArray(recentOrders) && recentOrders.length > 0 && recentOrders[0] && Array.isArray(recentOrders[0].orders)) 
+        ? recentOrders[0].orders 
+        : [];
+
+  const recentOrdersString = actualOrders
+        .map((order) => {
+            const itemsString = Array.isArray(order.items) ? order.items.join(', ') : 'No items listed';
+            const dateString = order.orderDate ? `On ${order.orderDate}, ` : '';
+            return `${dateString}I ordered: ${itemsString}`;
+        })
+        .join('; ');
 
   return `A user has provided the following information for food suggestions.
       Current Time: ${currentTime}
@@ -61,8 +69,16 @@ const buildV3Prompt = (userData) => {
         currentTime,
     } = userData;
 
-    const recentOrdersString = (recentOrders || [])
-        .map((order) => `On ${order.orderDate}, ordered: ${order.items.join(', ')}`)
+    const actualOrders = (Array.isArray(recentOrders) && recentOrders.length > 0 && recentOrders[0] && Array.isArray(recentOrders[0].orders)) 
+        ? recentOrders[0].orders 
+        : [];
+
+    const recentOrdersString = actualOrders
+        .map((order) => {
+            const itemsString = Array.isArray(order.items) ? order.items.join(', ') : 'No items listed';
+            const dateString = order.orderDate ? `On ${order.orderDate}, ` : '';
+            return `${dateString}ordered: ${itemsString}`;
+        })
         .join('; ');
 
     return `You are an expert culinary assistant for the "WhatShouldIEat" app. 
@@ -77,11 +93,12 @@ const buildV3Prompt = (userData) => {
     recentOrders: ${recentOrdersString || 'No recent orders'}
     Current Time: ${currentTime}
 
-    Your Goal: Generate a list of exactly six meal suggestions for the user's next meal based on the current time.
+    Your Goal: Generate a list of exactly ten meal suggestions for the user's next meal based on the current time.
 
     Requirements:
     - Analyze Holistically: Consider all provided user data. The recentOrders and lastMeals give you a strong signal of what to avoid suggesting right now.
-    - Familiar Suggestions (4 options): These should align with the user's favouriteCuisines but be different from their recent meals.
+    - Familiar Suggestions (6 options): These should align with the user's location but be different from their recent meals.
+    - Cuisine Suggestions (2 options): These should be meals the cuisine of the user selected that are likely available in the user's ${location.city}.
     - Adventurous Suggestions (2 options): These should be meals from other cuisines that are likely available in the user's ${location.city}. They should not be from the favouriteCuisines list.
     - Respect Restrictions: All suggestions must strictly adhere to dietaryRestrictions and anythingToAvoid.
     - Generate Rich Content: For each suggestion, provide a short personalized reason, a longer description of the meal, and relevant tags.
@@ -92,11 +109,14 @@ const buildV3Prompt = (userData) => {
     {
         "mealName": "Efo Riro with Semo",
         "cuisine": "Nigerian",
-        "simpleReason": "A classic Nigerian staple that's savory and full of greens. ≤90 chars",
-        "mealDescription": "Efo Riro is a rich vegetable soup made with spinach, peppers, and palm oil, often served with a swallow like Semo. It's known for its deep, savory flavor. ≤250 chars",
+        "simpleReason": "A classic Nigerian staple that's savory and full of greens.",
+        "mealDescription": "Efo Riro is a rich vegetable soup made with spinach, peppers, and palm oil, often served with a swallow like Semo. It's known for its deep, savory flavor.",
         "tags": ["Vegetable-Rich", "Savory", "Local Favorite"],
         "suggestionType": "familiar" | "adventurous"
     }
+
+    simpleReason should be less than 90 characters.
+    mealDescription should be less than 250 characters.
 `;
 };
 
